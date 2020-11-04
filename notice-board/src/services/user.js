@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { UserModel } from '../models/User.js';
+import UserModel from '../models/User.js';
 
 export default class UserService {
   findUser(email) {

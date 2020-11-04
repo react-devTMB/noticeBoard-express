@@ -1,5 +1,6 @@
 import express from 'express';
 import UserService from '../services/user.js';
+import passport from '../config/passport.js';
 import logger from '../config/logger.js';
 
 const router = express.Router();
@@ -19,8 +20,8 @@ router.post('/register', async (req, res) => {
 });
 
 // login
-router.post('/login', (req, res) => {
-  //logger.debug(JSON.stringify(users));
+router.post('/login', passport.authenticate('local'), (req, res) => {
+  res.status(200).json({ success: true });
 });
 
 export default router;

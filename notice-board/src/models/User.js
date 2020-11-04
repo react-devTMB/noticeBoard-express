@@ -43,10 +43,6 @@ UserSchema.virtual('newPassword')
     this._newPassword = value;
   });
 
-UserSchema.pre('save', function (next) {
-  next();
-});
-
 // password validation
 // const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,16}$/;
 // const passwordRegexErrorMessage = 'Should be minimum 8 characters of alphabet and number combination!';
@@ -83,6 +79,12 @@ UserSchema.pre('save', function (next) {
 //   }
 // });
 
+// model methods
+UserSchema.methods.comparePassword = function (password) {
+  const user = this;
+  return bcrypt.compareSync(password, user.password);
+};
+
 UserSchema.pre('save', function (next) {
   const saltRounds = 10;
   const user = this;
@@ -103,4 +105,5 @@ UserSchema.pre('save', function (next) {
   }
 });
 
-export const UserModel = mongoose.model('User', UserSchema);
+const UserModel = mongoose.model('User', UserSchema);
+export default UserModel;
