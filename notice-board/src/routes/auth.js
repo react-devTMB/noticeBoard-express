@@ -20,10 +20,6 @@ router.post('/register', async (req, res) => {
 });
 
 // login
-// router.post('/login', passport.authenticate('local'), (req, res) => {
-//   res.status(200).json({ success: true });
-// });
-
 router.post('/login', (req, res, next) => {
   passport.authenticate('local', (err, user, info) => {
     if (err) return next(err);
