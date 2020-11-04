@@ -32,12 +32,12 @@ passport.use(
         .select({ email: 1, password: 1 })
         .exec((err, user) => {
           if (err) return done(err);
-
-          if (user && user.comparePassword(password)) {
-            return done(null, user);
-          } else {
-            return done(null, false);
+          if (!user) {
+            return done(null, false, { message: '존재하지 않는 아이디입니다.' });
           }
+          if (!user.comparePassword(password)) return done(null, false, { message: '비밀번호가 일치하지 않습니다.' });
+
+          return done(null, user);
         });
     }
   )
