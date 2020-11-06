@@ -24,12 +24,14 @@ passport.serializeUser((user, done) => {
 
 // deserializeUser - 클라이언트 측에서 다른 요청이 있을 때, 세션에 담긴 유저 정보를 다시 알려주는 역할
 // 정상적으로 deserializeUser 작동 시, req.isAuthenticated() true 반환. req.user 객체 생성
-passport.deserializeUser(async (user, done) => {
-  if (await findUserById(user._id)) {
-    done(null, user);
-  } else {
-    done(null, false);
-  }
+passport.deserializeUser((user, done) => {
+  process.nextTick(async () => {
+    if (await findUserById(user._id)) {
+      done(null, user);
+    } else {
+      done(null, false);
+    }
+  });
 });
 
 // local strategy
@@ -64,21 +66,23 @@ passport.use(
       enableProof: true,
       profileFields: ['id', 'displayName', 'email', 'name'],
     },
-    async (accessToken, refreshToken, profile, done) => {
-      const user = await findOauthUser(profile.id, profile.provider);
+    (accessToken, refreshToken, profile, done) => {
+      process.nextTick(async () => {
+        const user = await findOauthUser(profile.id, profile.provider);
 
-      if (!user) {
-        const newUser = await createOauthUser({ ...profile._json, provider: profile.provider });
-        await createToken({
-          id: profile.id,
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        });
+        if (!user) {
+          const newUser = await createOauthUser({ ...profile._json, provider: profile.provider });
+          await createToken({
+            id: profile.id,
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
 
-        return done(null, newUser);
-      } else {
-        return done(null, user);
-      }
+          return done(null, newUser);
+        } else {
+          return done(null, user);
+        }
+      });
     }
   )
 );
@@ -91,27 +95,29 @@ passport.use(
       clientSecret: process.env.KAKAO_SECRET,
       callbackURL: '/oauth/kakao/callback',
     },
-    async (accessToken, refreshToken, profile, done) => {
-      const user = await findOauthUser(profile.id, profile.provider);
+    (accessToken, refreshToken, profile, done) => {
+      process.nextTick(async () => {
+        const user = await findOauthUser(profile.id, profile.provider);
 
-      if (!user) {
-        const newUser = await createOauthUser({
-          id: profile.id,
-          email: profile._json.kakao_account.email,
-          name: profile.username,
-          provider: profile.provider,
-        });
+        if (!user) {
+          const newUser = await createOauthUser({
+            id: profile.id,
+            email: profile._json.kakao_account.email,
+            name: profile.username,
+            provider: profile.provider,
+          });
 
-        await createToken({
-          id: profile.id,
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        });
+          await createToken({
+            id: profile.id,
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
 
-        return done(null, newUser);
-      } else {
-        return done(null, user);
-      }
+          return done(null, newUser);
+        } else {
+          return done(null, user);
+        }
+      });
     }
   )
 );
