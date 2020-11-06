@@ -6,7 +6,7 @@ import cors from 'cors';
 import createError from 'http-errors';
 import passport from './config/passport.js';
 
-import authRoutes from './routes/auth.js';
+import oauthRoutes from './routes/oauth.js';
 import userRoutes from './routes/user.js';
 
 dotenv.config();
@@ -44,7 +44,7 @@ mongoose.connect(
 );
 
 // Routes
-app.use('/auth', authRoutes);
+app.use('/oauth', oauthRoutes);
 app.use('/user', userRoutes);
 
 // catch 404 and forward to error handler
@@ -60,7 +60,6 @@ app.use(function (err, req, res, next) {
 
   // render the error page
   res.status(err.status || 500);
-  //   res.render('error');
   res.json({ message: 'error' });
 });
 
