@@ -1,6 +1,8 @@
 import passport from 'passport';
 import passportLocal from 'passport-local';
 import passportFacebook from 'passport-facebook';
+import passportKakao from 'passport-kakao';
+import passportGithub from 'passport-github';
 import { findUser, findUserById } from '../services/user.js';
 import { findOauthUser, createOauthUser } from '../services/oauth.js';
 import { createToken } from '../services/token.js';
@@ -10,6 +12,8 @@ dotenv.config();
 
 const LocalStrategy = passportLocal.Strategy;
 const FacebookStrategy = passportFacebook.Strategy;
+const KakaoStrategy = passportKakao.Strategy;
+const GithubStrategy = passportGithub.Strategy;
 
 // serialize & deserialize User
 // serialize - 로그인 성공 시, 한번만 호출. 세션에 user 정보 저장(req.session.passport.user)
@@ -65,6 +69,72 @@ passport.use(
 
       if (!user) {
         const newUser = await createOauthUser({ ...profile._json, provider: profile.provider });
+        await createToken({
+          id: profile.id,
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        return done(null, newUser);
+      } else {
+        return done(null, user);
+      }
+    }
+  )
+);
+
+// kakao strategy
+passport.use(
+  new KakaoStrategy(
+    {
+      clientID: process.env.KAKAO_ID,
+      clientSecret: process.env.KAKAO_SECRET,
+      callbackURL: '/oauth/kakao/callback',
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      const user = await findOauthUser(profile.id, profile.provider);
+
+      if (!user) {
+        const newUser = await createOauthUser({
+          id: profile.id,
+          email: profile._json.kakao_account.email,
+          name: profile.username,
+          provider: profile.provider,
+        });
+
+        await createToken({
+          id: profile.id,
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        return done(null, newUser);
+      } else {
+        return done(null, user);
+      }
+    }
+  )
+);
+
+// github strategy
+passport.use(
+  new GithubStrategy(
+    {
+      clientID: process.env.GITHUB_ID,
+      clientSecret: process.env.GITHUB_SECRET,
+      callbackURL: '/oauth/github/callback',
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      const user = await findOauthUser(profile.id, profile.provider);
+
+      if (!user) {
+        const newUser = await createOauthUser({
+          id: profile.id,
+          email: profile._json.email,
+          name: profile.username,
+          provider: profile.provider,
+        });
+
         await createToken({
           id: profile.id,
           access_token: accessToken,

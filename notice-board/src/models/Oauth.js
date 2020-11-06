@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const OauthSchema = mongoose.Schema({
   id: { type: String, required: true },
-  email: { type: String, required: true, lowercase: true },
+  email: { type: String, lowercase: true },
   name: { type: String, required: true },
   provider: { type: String, required: true },
   reg_date: { type: Date, default: Date.now },
