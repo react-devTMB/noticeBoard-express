@@ -1,19 +1,106 @@
 import UserModel from '../models/User.js';
 import passport from '../config/passport.js';
+import Joi from 'joi';
+import { ADMIN_EMAIL } from '../common/util.js';
 
+
+/**
+ * POST /user/signup
+ * 회원가입
+ */
 export const userRegist = async (req, res) => {
-  const { email } = req.body;
-  const user = await findUser(email);
+  console.log(JSON.stringify(req.body));
+  let { email, name, role_id } = req.body;
 
-  if (!user) {
-    await createUser(req.body);
-    res.status(200).json({ success: true });
-  } else {
-    res.status(309).json({ success: false, message: '이미 등록된 email 입니다.' });
+  // 해당 이메일만 admin 나머지는 user
+  ADMIN_EMAIL.includes(email) ? req.body.role_id = "admin" : req.body.role_id = "user" ;
+  role_id = req.body.role_id;
+  // request body내용 검증
+  const checkSchema = Joi.object().keys({
+    name : Joi.string().max(8).required(),
+    password: Joi.string().min(8).max(16).required(),
+    email : Joi.string().required(),
+    role_id : Joi.string().required()
+  });
+  
+  const result = checkSchema.validate(req.body);
+  if(result.error) {
+    res.body = result.error;
+    return res.status(400).json({ success: false, message: 'Required error' });
   }
+
+  try {
+    const hasEmail = await findUser(email);
+    const hasName = await findUserName(name);
+  
+    // email, nickname 존재여부 체크
+    if (!hasEmail && !hasName) {
+      await createUser(req.body);
+      res.status(200).json({ success: true, body : res.body });
+    } else {
+      if(hasEmail) {
+        res.status(200).json({ success: false, errorTxt : 'This email is already registered' });
+      } else {
+        res.status(200).json({ success: false, errorTxt : 'This nickname is already registered'});
+      }
+    }
+  } catch(e) {
+    res.status(500).json(e);
+  }
+  
+ 
 };
 
-export const userLogin  = async (req, res, next) => {
+/**
+ * POST /user/login
+ * 로그인
+ */
+export const userLogin = async (req, res) => {
+  console.log('req >> ' , req);
+  const { email, password} = req.body;
+
+  console.log('email', email, 'password' , password );
+
+  if(!email) {
+    return res.status(200).json({ success: false, errorTxt : 'Required email' });
+  }
+
+  if(!password) {
+    return res.status(200).json({ success: false, errorTxt : 'Required password' });
+  }
+
+  try {
+    // 계정이 없는 경우
+    const hasEmail = await findUser(email);
+    // const checkPassword = await hasEmail.comparePassword(password);
+
+    
+     console.log('hasEmail', hasEmail );
+
+    if(!hasEmail) {
+      return res.status(200).json({ success: false, errorTxt : 'The email does not exist.' });
+    } else {
+      res.status(200).json({ success: true });
+
+    }
+
+    // if(!checkPassword) {
+    //   return res.status(200).json({ success: false, errorTxt : 'Incorrect password.' });
+    // }
+
+    // if(hasEmail && checkPassword) {
+    // }
+
+
+
+
+  } catch(e) {
+    res.status(500).json(e);
+  }
+}
+
+// passport login
+export const passportLogin  = async (req, res, next) => {
   //passport-local 인증 시도
   passport.authenticate('local', (err, user, info) => {
     if (err) return next(err);
@@ -32,6 +119,10 @@ export const userLogin  = async (req, res, next) => {
 
 export const findUser = (email) => {
   return UserModel.findOne({ email });
+};
+
+export const findUserName = (name) => {
+  return UserModel.findOne({ name });
 };
 
 export const findUserById = (_id) => {

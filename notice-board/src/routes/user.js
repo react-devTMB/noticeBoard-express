@@ -1,5 +1,5 @@
 import express from 'express';
-import { userLogin, userRegist } from '../services/user.js';
+import { userLogin, userRegist, passportLogin } from '../services/user.js';
 
 const router = express.Router();
 
@@ -8,5 +8,6 @@ router.post('/signup', userRegist);
 
 // login
 router.post('/login', userLogin);
+router.post('/passportLogin', passportLogin);
 
 export default router;
