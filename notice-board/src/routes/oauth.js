@@ -31,4 +31,11 @@ router.get('/github/callback', passport.authenticate('github', { failureRedirect
   res.redirect('http://localhost:3001/home');
 });
 
+// google login
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+router.get('/google/callback', passport.authenticate('google', { failureRedirect: 'http://localhost:3001/login' }), (req, res) => {
+  res.redirect('http://localhost:3001/home');
+});
+
 export default router;
