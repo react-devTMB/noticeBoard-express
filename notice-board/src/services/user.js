@@ -10,7 +10,7 @@ import { ADMIN_EMAIL } from '../common/util.js';
  */
 export const userRegist = async (req, res) => {
   console.log(JSON.stringify(req.body));
-  let { email, name, role_id } = req.body;
+  let { email, name, role_id, password } = req.body;
 
   // 해당 이메일만 admin 나머지는 user
   ADMIN_EMAIL.includes(email) ? req.body.role_id = "admin" : req.body.role_id = "user" ;
@@ -29,13 +29,18 @@ export const userRegist = async (req, res) => {
     return res.status(400).json({ success: false, message: 'Required error' });
   }
 
-  try {
     const hasEmail = await findUser(email);
     const hasName = await findUserName(name);
   
     // email, nickname 존재여부 체크
     if (!hasEmail && !hasName) {
-      await createUser(req.body);
+      const user = new UserModel({
+        'email' : email
+      });
+
+      await user.setPassword(password);
+      await user.save();
+      delete user.toJSON().password;
       res.status(200).json({ success: true, body : res.body });
     } else {
       if(hasEmail) {
@@ -44,10 +49,6 @@ export const userRegist = async (req, res) => {
         res.status(200).json({ success: false, errorTxt : 'This nickname is already registered'});
       }
     }
-  } catch(e) {
-    res.status(500).json(e);
-  }
-  
  
 };
 
@@ -56,10 +57,8 @@ export const userRegist = async (req, res) => {
  * 로그인
  */
 export const userLogin = async (req, res) => {
-  console.log('req >> ' , req);
-  const { email, password} = req.body;
 
-  console.log('email', email, 'password' , password );
+  const { email, password} = req.body;
 
   if(!email) {
     return res.status(200).json({ success: false, errorTxt : 'Required email' });
@@ -69,16 +68,18 @@ export const userLogin = async (req, res) => {
     return res.status(200).json({ success: false, errorTxt : 'Required password' });
   }
 
-  try {
-    // 계정이 없는 경우
-    const hasEmail = await findUser(email);
-    // const checkPassword = await hasEmail.comparePassword(password);
+  // 계정이 없는 경우
+  const user = await UserModel.findByEmail(email);
+  console.log('user >> ' , user);
 
-    
-     console.log('hasEmail', hasEmail );
+  const valid = await user.checkPassword(password);
 
-    if(!hasEmail) {
+  console.log('valid >> ' , valid);
+
+    if(!user) {
       return res.status(200).json({ success: false, errorTxt : 'The email does not exist.' });
+    } else if(!valid) {
+      return res.status(200).json({ success: false, errorTxt : 'The password is incorrect.' });
     } else {
       res.status(200).json({ success: true });
 
@@ -94,9 +95,6 @@ export const userLogin = async (req, res) => {
 
 
 
-  } catch(e) {
-    res.status(500).json(e);
-  }
 }
 
 // passport login

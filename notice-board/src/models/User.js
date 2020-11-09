@@ -3,8 +3,8 @@ import bcrypt from 'bcryptjs';
 
 const UserSchema = mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true },
-  password: { type: String, required: true, select: false, trim: true },
-  name: { type: String, required: true },
+  password: { type: String, required: true, trim: true },
+  name: { type: String },
   reg_date: { type: Date, default: Date.now },
   last_login: { type: Date },
   role_id: { type: String, default: 'user' },
@@ -78,12 +78,29 @@ UserSchema.virtual('newPassword')
 //     }
 //   }
 // });
-
-// model methods
-UserSchema.methods.comparePassword = function (password) {
-  const user = this;
-  return bcrypt.compareSync(password, user.password);
+UserSchema.methods.setPassword = async function (password) {
+  const hash = await bcrypt.hash(password, 10);
+  console.log('password >>> ', password, hash);
+  this.password = hash;
 };
+
+UserSchema.methods.checkPassword = async function (password) {
+  console.log('password >> ' , password, this.password);
+  const result = await bcrypt.compareSync(password, this.password)
+  return result;
+};
+
+UserSchema.statics.findByEmail = async function (email) {
+  return this.findOne({ email });
+};
+// model methods
+UserSchema.methods.comparePassword = async function (password) {
+  const user = this;
+  return await bcrypt.compareSync(password, user.password);
+};
+
+
+
 
 UserSchema.pre('save', function (next) {
   const saltRounds = 10;
