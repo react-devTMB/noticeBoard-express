@@ -43,11 +43,9 @@ export const userRegist = async (req, res) => {
       });
       await user.setPassword(password);
       await user.save();
-      delete user.toJSON().password;
-
+      
       const token = user.generateToken();
-      console.log('token > > ', token);
-      return res.status(200).json({ success: true, token : token, body : res.body });
+      return res.status(200).json({ success: true, token : token });
     } else {
       if(hasEmail) {
         return res.status(200).json({ success: false, errorTxt : 'This email is already registered' });
@@ -55,6 +53,8 @@ export const userRegist = async (req, res) => {
         return res.status(200).json({ success: false, errorTxt : 'This nickname is already registered'});
       }
     }
+
+
 };
 
 /**
@@ -76,17 +76,25 @@ export const userLogin = async (req, res) => {
   // 계정이 없는 경우
   const user = await UserModel.findByEmail(email);
 
-  if(!user) {
-    return res.status(200).json({ success: false, errorTxt : 'The email does not exist.' });
-  };
-  const valid = await user.checkPassword(password);
-
-  // password validation fail
-  if(!valid) {
-    return res.status(200).json({ success: false, errorTxt : 'The password is incorrect.' });
+  try {
+    if(!user) {
+      return res.status(200).json({ success: false, errorTxt : 'The email does not exist.' });
+    };
+    const valid = await user.checkPassword(password);
+  
+    // password validation fail
+    if(!valid) {
+      return res.status(200).json({ success: false, errorTxt : 'The password is incorrect.' });
+    }
+  
+    const token = user.generateToken();
+    // 로그인 성공
+    res.status(200).json({ success: true, token: token });
+  
+  } catch(e) {
+    res.status(500).json({e});
   }
-  // 로그인 성공
-  res.status(200).json({ success: true });
+
 
 }
 
@@ -124,3 +132,8 @@ export const createUser = (user) => {
   const userModel = new UserModel(user);
   return userModel.save();
 };
+
+// logout
+export const logout = async(ctx) => {
+
+}

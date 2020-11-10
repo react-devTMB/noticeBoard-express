@@ -8,6 +8,7 @@ import passport from './config/passport.js';
 
 import oauthRoutes from './routes/oauth.js';
 import userRoutes from './routes/user.js';
+import jwtMiddleware from './middleware/jwtMiddleware.js';
 
 dotenv.config();
 
@@ -45,6 +46,7 @@ mongoose.connect(
 
 // Routes
 app.use('/oauth', oauthRoutes);
+app.use(jwtMiddleware);
 app.use('/user', userRoutes);
 
 // catch 404 and forward to error handler

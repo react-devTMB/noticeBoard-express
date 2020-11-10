@@ -44,7 +44,7 @@ UserSchema.virtual('newPassword')
     this._newPassword = value;
   });
 
-  // set hashed password
+// set hashed password
 UserSchema.methods.setPassword = async function (password) {
   const hash = await bcrypt.hash(password, 10);
   this.password = hash;
@@ -64,7 +64,8 @@ UserSchema.methods.generateToken = function () {
     {
       _id : this.id,
       email : this.email,
-      name : this.name
+      name : this.name,
+      role_id : this.role_id
     },
     process.env.JWT_SECRET,
     {
