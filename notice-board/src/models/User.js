@@ -1,10 +1,11 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 const UserSchema = mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true },
   password: { type: String, required: true, trim: true },
-  name: { type: String },
+  name: { type: String, required: true },
   reg_date: { type: Date, default: Date.now },
   last_login: { type: Date },
   role_id: { type: String, default: 'user' },
@@ -43,6 +44,46 @@ UserSchema.virtual('newPassword')
     this._newPassword = value;
   });
 
+  // set hashed password
+UserSchema.methods.setPassword = async function (password) {
+  const hash = await bcrypt.hash(password, 10);
+  this.password = hash;
+};
+// check password
+UserSchema.methods.checkPassword = async function (password) {
+  const result = await bcrypt.compareSync(password, this.password)
+  return result;
+};
+// has email?
+UserSchema.statics.findByEmail = async function (email) {
+  return this.findOne({ email });
+};
+// generate token
+UserSchema.methods.generateToken = function () {
+  const token = jwt.sign(
+    {
+      _id : this.id,
+      email : this.email,
+      name : this.name
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn : '7d'
+    }
+  );
+  return token;
+};
+
+
+// model methods
+UserSchema.methods.comparePassword = async function (password) {
+  const user = this;
+  return await bcrypt.compareSync(password, user.password);
+};
+
+
+
+
 // password validation
 // const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,16}$/;
 // const passwordRegexErrorMessage = 'Should be minimum 8 characters of alphabet and number combination!';
@@ -78,49 +119,26 @@ UserSchema.virtual('newPassword')
 //     }
 //   }
 // });
-UserSchema.methods.setPassword = async function (password) {
-  const hash = await bcrypt.hash(password, 10);
-  console.log('password >>> ', password, hash);
-  this.password = hash;
-};
 
-UserSchema.methods.checkPassword = async function (password) {
-  console.log('password >> ' , password, this.password);
-  const result = await bcrypt.compareSync(password, this.password)
-  return result;
-};
+// UserSchema.pre('save', function (next) {
+//   const saltRounds = 10;
+//   const user = this;
 
-UserSchema.statics.findByEmail = async function (email) {
-  return this.findOne({ email });
-};
-// model methods
-UserSchema.methods.comparePassword = async function (password) {
-  const user = this;
-  return await bcrypt.compareSync(password, user.password);
-};
+//   if (!user.isModified('password')) {
+//     next();
+//   } else {
+//     // hash password
+//     bcrypt.genSalt(saltRounds, function (err, salt) {
+//       if (err) return next(err);
 
-
-
-
-UserSchema.pre('save', function (next) {
-  const saltRounds = 10;
-  const user = this;
-
-  if (!user.isModified('password')) {
-    next();
-  } else {
-    // hash password
-    bcrypt.genSalt(saltRounds, function (err, salt) {
-      if (err) return next(err);
-
-      bcrypt.hash(user.password, salt, function (err, hash) {
-        if (err) return next(err);
-        user.password = hash;
-        next();
-      });
-    });
-  }
-});
+//       bcrypt.hash(user.password, salt, function (err, hash) {
+//         if (err) return next(err);
+//         user.password = hash;
+//         next();
+//       });
+//     });
+//   }
+// });
 
 const UserModel = mongoose.model('User', UserSchema);
 export default UserModel;

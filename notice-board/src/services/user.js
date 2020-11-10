@@ -9,47 +9,52 @@ import { ADMIN_EMAIL } from '../common/util.js';
  * 회원가입
  */
 export const userRegist = async (req, res) => {
-  console.log(JSON.stringify(req.body));
+
+  // console.log('res >> ' , res);
+
   let { email, name, role_id, password } = req.body;
 
-  // 해당 이메일만 admin 나머지는 user
-  ADMIN_EMAIL.includes(email) ? req.body.role_id = "admin" : req.body.role_id = "user" ;
-  role_id = req.body.role_id;
-  // request body내용 검증
-  const checkSchema = Joi.object().keys({
-    name : Joi.string().max(8).required(),
-    password: Joi.string().min(8).max(16).required(),
-    email : Joi.string().required(),
-    role_id : Joi.string().required()
-  });
-  
-  const result = checkSchema.validate(req.body);
-  if(result.error) {
-    res.body = result.error;
-    return res.status(400).json({ success: false, message: 'Required error' });
-  }
+    // 해당 이메일만 admin 나머지는 user
+    ADMIN_EMAIL.includes(email) ? role_id = "admin" :role_id = "user" ;
+    req.body.role_id = role_id;
+    // request body내용 검증
+    const checkSchema = Joi.object().keys({
+      name : Joi.string().max(8).required(),
+      password: Joi.string().min(8).max(16).required(),
+      email : Joi.string().required(),
+      role_id : Joi.string().required()
+    });
+
+    const result = checkSchema.validate(req.body);
+    if(result.error) {
+      res.body = result.error;
+      return res.status(400).json({ success: false, message: 'Required error' });
+    }
 
     const hasEmail = await findUser(email);
     const hasName = await findUserName(name);
-  
+
     // email, nickname 존재여부 체크
     if (!hasEmail && !hasName) {
       const user = new UserModel({
-        'email' : email
+        'email' : email,
+        'name' : name,
+        'role_id' : role_id
       });
-
       await user.setPassword(password);
       await user.save();
       delete user.toJSON().password;
-      res.status(200).json({ success: true, body : res.body });
+
+      const token = user.generateToken();
+      console.log('token > > ', token);
+      return res.status(200).json({ success: true, token : token, body : res.body });
     } else {
       if(hasEmail) {
-        res.status(200).json({ success: false, errorTxt : 'This email is already registered' });
+        return res.status(200).json({ success: false, errorTxt : 'This email is already registered' });
       } else {
-        res.status(200).json({ success: false, errorTxt : 'This nickname is already registered'});
+        return res.status(200).json({ success: false, errorTxt : 'This nickname is already registered'});
       }
     }
- 
 };
 
 /**
@@ -70,30 +75,18 @@ export const userLogin = async (req, res) => {
 
   // 계정이 없는 경우
   const user = await UserModel.findByEmail(email);
-  console.log('user >> ' , user);
 
+  if(!user) {
+    return res.status(200).json({ success: false, errorTxt : 'The email does not exist.' });
+  };
   const valid = await user.checkPassword(password);
 
-  console.log('valid >> ' , valid);
-
-    if(!user) {
-      return res.status(200).json({ success: false, errorTxt : 'The email does not exist.' });
-    } else if(!valid) {
-      return res.status(200).json({ success: false, errorTxt : 'The password is incorrect.' });
-    } else {
-      res.status(200).json({ success: true });
-
-    }
-
-    // if(!checkPassword) {
-    //   return res.status(200).json({ success: false, errorTxt : 'Incorrect password.' });
-    // }
-
-    // if(hasEmail && checkPassword) {
-    // }
-
-
-
+  // password validation fail
+  if(!valid) {
+    return res.status(200).json({ success: false, errorTxt : 'The password is incorrect.' });
+  }
+  // 로그인 성공
+  res.status(200).json({ success: true });
 
 }
 
