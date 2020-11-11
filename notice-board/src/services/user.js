@@ -43,7 +43,7 @@ export const userRegist = async (req, res) => {
       });
       await user.setPassword(password);
       await user.save();
-      
+
       const token = user.generateToken();
       return res.status(200).json({ success: true, token : token });
     } else {
@@ -81,21 +81,26 @@ export const userLogin = async (req, res) => {
       return res.status(200).json({ success: false, errorTxt : 'The email does not exist.' });
     };
     const valid = await user.checkPassword(password);
-  
+
     // password validation fail
     if(!valid) {
       return res.status(200).json({ success: false, errorTxt : 'The password is incorrect.' });
     }
-  
+
     const token = user.generateToken();
     // 로그인 성공
     res.status(200).json({ success: true, token: token });
-  
+
   } catch(e) {
     res.status(500).json({e});
   }
 
-
+}
+// logout
+export const userLogout = async(req, res) => {
+ console.log(req.headers['authorization']);
+ req.headers['authorization'] = null;
+ req.status = 204;
 }
 
 // passport login
@@ -133,7 +138,4 @@ export const createUser = (user) => {
   return userModel.save();
 };
 
-// logout
-export const logout = async(ctx) => {
 
-}
