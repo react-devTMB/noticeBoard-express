@@ -53,8 +53,6 @@ export const userRegist = async (req, res) => {
         return res.status(200).json({ success: false, errorTxt : 'This nickname is already registered'});
       }
     }
-
-
 };
 
 /**

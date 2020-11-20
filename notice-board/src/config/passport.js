@@ -3,6 +3,7 @@ import passportLocal from 'passport-local';
 import passportFacebook from 'passport-facebook';
 import passportKakao from 'passport-kakao';
 import passportGithub from 'passport-github';
+import passportNaver from 'passport-naver';
 import { findUser, findUserById } from '../services/user.js';
 import { findOauthUser, createOauthUser } from '../services/oauth.js';
 import { createToken } from '../services/token.js';
@@ -14,6 +15,7 @@ const LocalStrategy = passportLocal.Strategy;
 const FacebookStrategy = passportFacebook.Strategy;
 const KakaoStrategy = passportKakao.Strategy;
 const GithubStrategy = passportGithub.Strategy;
+const NaverStategy = passportNaver.Strategy;
 
 // serialize & deserialize User
 // serialize - 로그인 성공 시, 한번만 호출. 세션에 user 정보 저장(req.session.passport.user)
@@ -125,6 +127,40 @@ passport.use(
       callbackURL: '/oauth/github/callback',
     },
     async (accessToken, refreshToken, profile, done) => {
+      const user = await findOauthUser(profile.id, profile.provider);
+
+      if (!user) {
+        const newUser = await createOauthUser({
+          id: profile.id,
+          email: profile._json.email,
+          name: profile.username,
+          provider: profile.provider,
+        });
+
+        await createToken({
+          id: profile.id,
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        return done(null, newUser);
+      } else {
+        return done(null, user);
+      }
+    }
+  )
+);
+
+// naver strategy
+passport.use(
+  new NaverStategy(
+    {
+      clientID: process.env.NAVER_ID,
+      clientSecret: process.env.NAVER_SECRET,
+      callbackURL: '/oauth/naver/callback',
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      console.log('naver strategy >>>' , accessToken, refreshToken, profile);
       const user = await findOauthUser(profile.id, profile.provider);
 
       if (!user) {
