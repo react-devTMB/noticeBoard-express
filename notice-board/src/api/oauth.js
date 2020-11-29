@@ -1,6 +1,6 @@
 import express from 'express';
 import passport from '../config/passport.js';
-import logger from '../config/logger.js';
+// import logger from '../config/logger.js';
 
 const router = express.Router();
 

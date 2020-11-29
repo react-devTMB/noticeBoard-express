@@ -4,12 +4,12 @@ import passportFacebook from 'passport-facebook';
 import passportKakao from 'passport-kakao';
 import passportGithub from 'passport-github';
 import passportGoogle from 'passport-google-oauth20';
+
+import config from '../config/index.js';
+
 import { findUser, findUserById } from '../services/user.js';
 import { findOauthUser, createOauthUser } from '../services/oauth.js';
 import { createToken } from '../services/token.js';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 const LocalStrategy = passportLocal.Strategy;
 const FacebookStrategy = passportFacebook.Strategy;
@@ -38,8 +38,8 @@ passport.deserializeUser(async (user, done) => {
 passport.use(
   new LocalStrategy(
     {
-      usernameField: 'email',
-      passwordField: 'password',
+      usernameField: config.security.usernameField,
+      passwordField: config.security.passwordField,
       passReqToCallback: true,
     },
     (req, email, password, done) => {
@@ -47,8 +47,8 @@ passport.use(
         .select({ password: 1 })
         .exec((err, user) => {
           if (err) return done(err);
-          if (!user) return done(null, false, { message: 'Incorrect email.' });
-          if (!user.comparePassword(password)) return done(null, false, { message: 'Incorrect password.' });
+          if (!user) return done(null, false, { message: `Incorrect ${usernameField}.` });
+          if (!user.comparePassword(password)) return done(null, false, { message: `Incorrect ${passwordField}.` });
 
           return done(null, user);
         });
@@ -60,8 +60,8 @@ passport.use(
 passport.use(
   new FacebookStrategy(
     {
-      clientID: process.env.FACEBOOK_ID,
-      clientSecret: process.env.FACEBOOK_SECRET,
+      clientID: config.oauth.facebook.clientID,
+      clientSecret: config.oauth.facebook.clientSecret,
       callbackURL: '/oauth/facebook/callback',
       enableProof: true,
       profileFields: ['id', 'displayName', 'email', 'name'],
@@ -89,8 +89,8 @@ passport.use(
 passport.use(
   new KakaoStrategy(
     {
-      clientID: process.env.KAKAO_ID,
-      clientSecret: process.env.KAKAO_SECRET,
+      clientID: config.oauth.kakao.clientID,
+      clientSecret: config.oauth.kakao.clientSecret,
       callbackURL: '/oauth/kakao/callback',
     },
     async (accessToken, refreshToken, profile, done) => {
@@ -122,8 +122,8 @@ passport.use(
 passport.use(
   new GithubStrategy(
     {
-      clientID: process.env.GITHUB_ID,
-      clientSecret: process.env.GITHUB_SECRET,
+      clientID: config.oauth.github.clientID,
+      clientSecret: config.oauth.github.clientSecret,
       callbackURL: '/oauth/github/callback',
     },
     async (accessToken, refreshToken, profile, done) => {
@@ -155,8 +155,8 @@ passport.use(
 passport.use(
   new GoogleStrategy(
     {
-      clientID: process.env.GOOGLE_ID,
-      clientSecret: process.env.GOOGLE_SECRET,
+      clientID: config.oauth.google.clientID,
+      clientSecret: config.oauth.google.clientSecret,
       callbackURL: '/oauth/google/callback',
     },
     async (accessToken, refreshToken, profile, done) => {

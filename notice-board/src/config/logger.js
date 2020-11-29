@@ -2,8 +2,10 @@ import winston from 'winston';
 import path from 'path';
 import winstonDaily from 'winston-daily-rotate-file';
 
+import config from '../config/index.js';
+
 const { createLogger, format, transports } = winston;
-const logDir = 'logs';
+const logDir = config.logger.dir;
 const maxKeepDays = 7;
 const options = {
   format: format.combine(
@@ -15,7 +17,7 @@ const options = {
   transports: [
     // info level
     new winstonDaily({
-      level: 'info',
+      level: config.logger.level,
       datePattern: 'YYYY-MM-DD',
       dirname: logDir,
       filename: `%DATE%.log`,
@@ -24,7 +26,7 @@ const options = {
     }),
     // error level
     new winstonDaily({
-      level: 'info',
+      level: config.logger.level,
       datePattern: 'YYYY-MM-DD',
       dirname: `${logDir}/error`,
       filename: `%DATE%.error.log`,
@@ -38,9 +40,9 @@ const options = {
  * Log Level
  * error: 0, warn: 1, info: 2, http: 3, verbose: 4, debug: 5, silly: 6
  */
-const logger = winston.createLogger(options);
+const logger = createLogger(options);
 
-if (process.env.NODE_ENV !== 'production') {
+if (config.profile !== 'production') {
   logger.add(
     new transports.Console({
       format: format.combine(format.colorize()),
@@ -48,4 +50,10 @@ if (process.env.NODE_ENV !== 'production') {
   );
 }
 
-export default logger;
+const stream = {
+  write: (message) => {
+    logger.info(message);
+  },
+};
+
+export { logger, stream };
