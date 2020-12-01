@@ -3,7 +3,6 @@ import session from 'express-session';
 import morgan from 'morgan';
 import cors from 'cors';
 import createError from 'http-errors';
-import { OK, BAD_REQUEST, NOT_FOUND, INTERNAL_SERVER_ERROR } from 'http-status';
 
 import config from '../config/index.js';
 import constant from '../constant/index.js';
@@ -27,7 +26,7 @@ export default async ({ expressApp: app }) => {
     case constant.PROFILE.PROD:
       app.use(
         morgan('tiny', {
-          skip: (req, res) => res.statusCode < BAD_REQUEST,
+          skip: (req, res) => res.statusCode < 400,
           stream,
         })
       );
@@ -44,9 +43,9 @@ export default async ({ expressApp: app }) => {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // define context path for health check
-  app.get('/status', (req, res) => res.status(OK).end());
-  app.head('/status', (req, res) => res.status(OK).end());
+  // define route for health check
+  app.get('/status', (req, res) => res.status(200).end());
+  app.head('/status', (req, res) => res.status(200).end());
   app.enable('trust proxy');
 
   // define routes
@@ -56,7 +55,7 @@ export default async ({ expressApp: app }) => {
 
   // catch 404(not found) and forward to error handler
   app.use((req, res, next) => {
-    next(createError(NOT_FOUND));
+    next(createError(404));
   });
 
   // error handler
@@ -66,7 +65,7 @@ export default async ({ expressApp: app }) => {
     res.locals.error = req.app.get('env') === constant.PROFILE.DEV ? err : {};
 
     // render the error page
-    res.status(err.status || INTERNAL_SERVER_ERROR);
+    res.status(err.status || 500);
     res.json({ message: 'error' });
   });
 

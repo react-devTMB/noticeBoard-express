@@ -1,5 +1,5 @@
 import UserModel from '../models/User.js';
-import passport from '../config/passport.js';
+import passport from '../middlewares/passport.js';
 
 export const userRegist = async (req, res) => {
   const { email } = req.body;
