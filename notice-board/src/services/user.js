@@ -2,6 +2,7 @@ import UserModel from '../models/User.js';
 import passport from '../config/passport.js';
 import Joi from 'joi';
 import { ADMIN_EMAIL } from '../common/util.js';
+import { readProfile } from './oauth.js';
 
 
 /**
@@ -117,6 +118,21 @@ export const passportLogin  = async (req, res, next) => {
       return res.status(200).send({ success: true });
     });
   })(req, res, next);
+};
+
+// TODO 회원정보 가져오기
+export const getMemberInfos = async (req, res, next) => {
+  console.log('req.body >> ' , req.headers.authorization);
+  let result;
+  // oauth
+  if(data.authLogin === "Y") {
+  result = await readProfile('naver', req.headers.authorization);
+  } else {
+    findUser(data.email);
+  }
+
+  console.log('getMemberInfos >> ' , result);
+
 };
 
 export const findUser = (email) => {
