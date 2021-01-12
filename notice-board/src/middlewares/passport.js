@@ -3,17 +3,19 @@ import passportLocal from 'passport-local';
 import passportFacebook from 'passport-facebook';
 import passportKakao from 'passport-kakao';
 import passportGithub from 'passport-github';
+import passportGoogle from 'passport-google-oauth20';
+
+import config from '../config/index.js';
+
 import { findUser, findUserById } from '../services/user.js';
 import { findOauthUser, createOauthUser } from '../services/oauth.js';
 import { createToken } from '../services/token.js';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 const LocalStrategy = passportLocal.Strategy;
 const FacebookStrategy = passportFacebook.Strategy;
 const KakaoStrategy = passportKakao.Strategy;
 const GithubStrategy = passportGithub.Strategy;
+const GoogleStrategy = passportGoogle.Strategy;
 
 // serialize & deserialize User
 // serialize - 로그인 성공 시, 한번만 호출. 세션에 user 정보 저장(req.session.passport.user)
@@ -38,8 +40,8 @@ passport.deserializeUser((user, done) => {
 passport.use(
   new LocalStrategy(
     {
-      usernameField: 'email',
-      passwordField: 'password',
+      usernameField: config.security.usernameField,
+      passwordField: config.security.passwordField,
       passReqToCallback: true,
     },
     (req, email, password, done) => {
@@ -47,8 +49,8 @@ passport.use(
         .select({ password: 1 })
         .exec((err, user) => {
           if (err) return done(err);
-          if (!user) return done(null, false, { message: 'Incorrect email.' });
-          if (!user.comparePassword(password)) return done(null, false, { message: 'Incorrect password.' });
+          if (!user) return done(null, false, { message: `Incorrect ${usernameField}.` });
+          if (!user.comparePassword(password)) return done(null, false, { message: `Incorrect ${passwordField}.` });
 
           return done(null, user);
         });
@@ -60,8 +62,8 @@ passport.use(
 passport.use(
   new FacebookStrategy(
     {
-      clientID: process.env.FACEBOOK_ID,
-      clientSecret: process.env.FACEBOOK_SECRET,
+      clientID: config.oauth.facebook.clientID,
+      clientSecret: config.oauth.facebook.clientSecret,
       callbackURL: '/oauth/facebook/callback',
       enableProof: true,
       profileFields: ['id', 'displayName', 'email', 'name'],
@@ -91,8 +93,8 @@ passport.use(
 passport.use(
   new KakaoStrategy(
     {
-      clientID: process.env.KAKAO_ID,
-      clientSecret: process.env.KAKAO_SECRET,
+      clientID: config.oauth.kakao.clientID,
+      clientSecret: config.oauth.kakao.clientSecret,
       callbackURL: '/oauth/kakao/callback',
     },
     (accessToken, refreshToken, profile, done) => {
@@ -126,8 +128,8 @@ passport.use(
 passport.use(
   new GithubStrategy(
     {
-      clientID: process.env.GITHUB_ID,
-      clientSecret: process.env.GITHUB_SECRET,
+      clientID: config.oauth.github.clientID,
+      clientSecret: config.oauth.github.clientSecret,
       callbackURL: '/oauth/github/callback',
     },
     async (accessToken, refreshToken, profile, done) => {
@@ -138,6 +140,39 @@ passport.use(
           id: profile.id,
           email: profile._json.email,
           name: profile.username,
+          provider: profile.provider,
+        });
+
+        await createToken({
+          id: profile.id,
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        return done(null, newUser);
+      } else {
+        return done(null, user);
+      }
+    }
+  )
+);
+
+// google strategy
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: config.oauth.google.clientID,
+      clientSecret: config.oauth.google.clientSecret,
+      callbackURL: '/oauth/google/callback',
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      const user = await findOauthUser(profile.id, profile.provider);
+
+      if (!user) {
+        const newUser = await createOauthUser({
+          id: profile.id,
+          email: profile._json.email,
+          name: profile._json.name,
           provider: profile.provider,
         });
 

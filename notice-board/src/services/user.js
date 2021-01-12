@@ -1,5 +1,5 @@
 import UserModel from '../models/User.js';
-import passport from '../config/passport.js';
+import passport from '../middlewares/passport.js';
 
 export const userRegist = async (req, res) => {
   const { email } = req.body;
@@ -13,7 +13,7 @@ export const userRegist = async (req, res) => {
   }
 };
 
-export const userLogin  = async (req, res, next) => {
+export const userLogin = async (req, res, next) => {
   //passport-local 인증 시도
   passport.authenticate('local', (err, user, info) => {
     if (err) return next(err);

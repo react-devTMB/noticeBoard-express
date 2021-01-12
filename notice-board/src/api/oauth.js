@@ -1,6 +1,6 @@
 import express from 'express';
-import passport from '../config/passport.js';
-import logger from '../config/logger.js';
+import passport from '../middlewares/passport.js';
+// import logger from '../config/logger.js';
 
 const router = express.Router();
 
@@ -28,6 +28,13 @@ router.get('/kakao/callback', passport.authenticate('kakao', { failureRedirect: 
 router.get('/github', passport.authenticate('github'));
 
 router.get('/github/callback', passport.authenticate('github', { failureRedirect: 'http://localhost:3001/login' }), function (req, res) {
+  res.redirect('http://localhost:3001/home');
+});
+
+// google login
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+router.get('/google/callback', passport.authenticate('google', { failureRedirect: 'http://localhost:3001/login' }), (req, res) => {
   res.redirect('http://localhost:3001/home');
 });
 
