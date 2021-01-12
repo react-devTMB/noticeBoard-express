@@ -5,13 +5,12 @@ import cors from 'cors';
 import createError from 'http-errors';
 
 import config from '../config/index.js';
-import constant from '../constant/index.js';
 import { stream } from '../config/logger.js';
 
 import passport from '../middlewares/passport.js';
 
 import oauthRoutes from '../api/oauth.js';
-import userRoutes from '../api/user.js';
+import userRouter from '../routers/user.js';
 
 export default async ({ expressApp: app }) => {
   // init config
@@ -19,11 +18,11 @@ export default async ({ expressApp: app }) => {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   switch (config.profile) {
-    case constant.PROFILE.DEV:
+    case 'development':
       app.use(morgan('combine', { stream }));
       break;
 
-    case constant.PROFILE.PROD:
+    case 'production':
       app.use(
         morgan('tiny', {
           skip: (req, res) => res.statusCode < 400,
@@ -51,7 +50,8 @@ export default async ({ expressApp: app }) => {
   // define routes
   app.use('/oauth', oauthRoutes);
 
-  app.use('/api/user', userRoutes);
+  app.use('/api/user', userRouter);
+  // app.use('/api/board', boardRoutes);
 
   // catch 404(not found) and forward to error handler
   app.use((req, res, next) => {
@@ -62,7 +62,7 @@ export default async ({ expressApp: app }) => {
   app.use((err, req, res, next) => {
     // set locals, only providing error in development
     res.locals.message = err.message;
-    res.locals.error = req.app.get('env') === constant.PROFILE.DEV ? err : {};
+    res.locals.error = req.app.get('env') === 'development' ? err : {};
 
     // render the error page
     res.status(err.status || 500);
