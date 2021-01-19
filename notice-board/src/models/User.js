@@ -1,17 +1,59 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
-const UserSchema = mongoose.Schema({
-  email: { type: String, required: true, unique: true, lowercase: true },
-  password: { type: String, required: true, select: false, trim: true },
-  name: { type: String, required: true },
-  reg_date: { type: Date, default: Date.now },
-  last_login: { type: Date },
-  role_id: { type: String, default: 'user' },
+const userSchema = mongoose.Schema({
+  email: {
+    type: String,
+    trim: true,
+    index: true,
+    unique: true,
+    required: true,
+    validate: [
+      (email) => {
+        return /^(([^<>()\].,;:\s@"]+(\.[^<>()\].,;:\s@"]+)*)|(".+"))@(([^<>()[\].,;:\s@"]+\.)+[^<>()[\].,;:\s@"]{2,})$/i.test(email);
+      },
+      '이메일 형식이 아닙니다.',
+    ],
+  },
+  password: {
+    type: String,
+    required: true,
+    validate: [
+      (password) => {
+        return /^(?=.*[a-zA-Z])(?=.*[^a-zA-Z0-9])(?=.*[0-9]).{8,16}$/.test(password);
+      },
+      '비밀번호는 8자이상 16자 이하, 영문, 숫자, 특수문자 조합이어야 합니다.',
+    ],
+  },
+  name: {
+    type: String,
+    trim: true,
+    required: true,
+    validate: [
+      (name) => {
+        return name.length > 0 && name.length <= 8;
+      },
+      '닉네임은 8자 이하만 사용 가능합니다.',
+    ],
+  },
+  created_date: {
+    type: Date,
+    required: true,
+    default: Date.now,
+  },
+  updated_date: {
+    type: Date,
+    required: true,
+    default: Date.now,
+  },
+  last_login_date: Date,
 });
 
-// virtuals
-UserSchema.virtual('passwordConfirmation')
+/**
+ * virtuals
+ */
+userSchema
+  .virtual('passwordConfirmation')
   .get(function () {
     return this._passwordConfirmation;
   })
@@ -19,41 +61,45 @@ UserSchema.virtual('passwordConfirmation')
     this._passwordConfirmation = value;
   });
 
-UserSchema.virtual('originalPassword')
+userSchema
+  .virtual('originalPassword')
   .get(function () {
-    return this._originalPassword;
+    this._originalPassword;
   })
   .set(function (value) {
     this._originalPassword = value;
   });
 
-UserSchema.virtual('currentPassword')
+userSchema
+  .virtual('currentPassword')
   .get(function () {
-    return this._currentPassword;
+    this._currentPassword;
   })
   .set(function (value) {
     this._currentPassword = value;
   });
 
-UserSchema.virtual('newPassword')
+userSchema
+  .virtual('newPassword')
   .get(function () {
-    return this._newPassword;
+    this._newPassword;
   })
   .set(function (value) {
     this._newPassword = value;
   });
 
-// password validation
-// const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,16}$/;
-// const passwordRegexErrorMessage = 'Should be minimum 8 characters of alphabet and number combination!';
-
-// UserSchema.path('password').validate(function (v) {
+/**
+ * custom validation
+ */
+// userSchema.path('password').validate(function (value) {
 //   const user = this;
+//   const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,16}$/;
+//   const passwordRegexErrorMessage = 'Should be minimum 8 characters of alphabet and number combination!';
 
 //   // create user
 //   if (user.isNew) {
 //     if (!user.passwordConfirmation) {
-//       user.invalidate('passwordConfirmation', 'Password Confirmation is required.');
+//       user.invalidate('passwordConfirm', 'Password Confirmation is required');
 //     }
 
 //     if (!passwordRegex.test(user.password)) {
@@ -70,7 +116,6 @@ UserSchema.virtual('newPassword')
 //     } else if (!bcrypt.compareSync(user.currentPassword, user.originalPassword)) {
 //       user.invalidate('currentPassword', 'Current Password is invalid!');
 //     }
-
 //     if (user.newPassword && !passwordRegex.test(user.newPassword)) {
 //       user.invalidate('newPassword', passwordRegexErrorMessage);
 //     } else if (user.newPassword !== user.passwordConfirmation) {
@@ -79,13 +124,17 @@ UserSchema.virtual('newPassword')
 //   }
 // });
 
-// model methods
-UserSchema.methods.comparePassword = function (password) {
-  const user = this;
-  return bcrypt.compareSync(password, user.password);
+/**
+ * methods
+ */
+userSchema.methods.comparePassword = function (password) {
+  return bcrypt.compareSync(password, this.password);
 };
 
-UserSchema.pre('save', function (next) {
+/**
+ * pre handler
+ */
+userSchema.pre('save', function (next) {
   const saltRounds = 10;
   const user = this;
 
@@ -93,11 +142,15 @@ UserSchema.pre('save', function (next) {
     next();
   } else {
     // hash password
-    bcrypt.genSalt(saltRounds, function (err, salt) {
-      if (err) return next(err);
+    bcrypt.genSalt(saltRounds, (err, salt) => {
+      if (err) {
+        next(err);
+      }
 
-      bcrypt.hash(user.password, salt, function (err, hash) {
-        if (err) return next(err);
+      bcrypt.hash(user.password, salt, (err, hash) => {
+        if (err) {
+          return next(err);
+        }
         user.password = hash;
         next();
       });
@@ -105,5 +158,4 @@ UserSchema.pre('save', function (next) {
   }
 });
 
-const UserModel = mongoose.model('User', UserSchema);
-export default UserModel;
+export default mongoose.model('User', userSchema);
