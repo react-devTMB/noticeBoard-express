@@ -1,7 +1,7 @@
-import mongoose from 'mongoose';
-import config from '../config/index.js';
+const mongoose = require('mongoose');
+const config = require('../config');
 
-export default async () => {
+module.exports = async () => {
   await mongoose.connect(
     config.mongoUri,
     {

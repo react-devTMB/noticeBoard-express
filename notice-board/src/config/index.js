@@ -1,9 +1,9 @@
-import dotenv from 'dotenv';
+const dotenv = require('dotenv');
 
 // get config from .env file
 dotenv.config();
 
-export default {
+module.exports = {
   profile: process.env.NODE_ENV,
 
   port: process.env.PORT,
