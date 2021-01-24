@@ -1,3 +1,6 @@
+const express = require('express');
+const passport = require('../config/passport');
+
 import express from 'express';
 import passport from '../middlewares/passport.js';
 // import logger from '../config/logger.js';

@@ -1,46 +1,47 @@
-import express from 'express';
-import session from 'express-session';
-import morgan from 'morgan';
-import cors from 'cors';
-import createError from 'http-errors';
+const express = require('express');
+// const session = require('express-session');
+const morgan = require('morgan');
+const cors = require('cors');
+const createError = require('http-errors');
 
-import config from '../config/index.js';
-import { stream } from '../config/logger.js';
+const config = require('../config');
+const passport = require('passport');
+// const { stream } = require('../logger');
 
-import passport from '../middlewares/passport.js';
+const passportConfig = require('../config/passport');
 
-import oauthRoutes from '../api/oauth.js';
-import userRouter from '../routers/user.js';
+// const oauthRoutes = require('../routers/oauth');
+const userRouter = require('../routers/user');
 
-export default async ({ expressApp: app }) => {
+module.exports = async ({ expressApp: app }) => {
   // init config
   app.set('port', config.port);
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
-  switch (config.profile) {
-    case 'development':
-      app.use(morgan('combine', { stream }));
-      break;
+  // switch (config.profile) {
+  //   case 'development':
+  //     app.use(morgan('combine', { stream }));
+  //     break;
 
-    case 'production':
-      app.use(
-        morgan('tiny', {
-          skip: (req, res) => res.statusCode < 400,
-          stream,
-        })
-      );
-      break;
-  }
+  //   case 'production':
+  //     app.use(
+  //       morgan('tiny', {
+  //         skip: (req, res) => res.statusCode < 400,
+  //         stream,
+  //       })
+  //     );
+  //     break;
+  // }
   app.use(cors());
-  app.use(
-    session({
-      secret: config.sessionSecret,
-      resave: false,
-      saveUninitialized: false,
-    })
-  );
+  // app.use(
+  //   session({
+  //     secret: config.sessionSecret,
+  //     resave: false,
+  //     saveUninitialized: false,
+  //   })
+  // );
   app.use(passport.initialize());
-  app.use(passport.session());
+  passportConfig();
 
   // define route for health check
   app.get('/status', (req, res) => res.status(200).end());
@@ -48,7 +49,7 @@ export default async ({ expressApp: app }) => {
   app.enable('trust proxy');
 
   // define routes
-  app.use('/oauth', oauthRoutes);
+  // app.use('/oauth', oauthRoutes);
 
   app.use('/api/user', userRouter);
   // app.use('/api/board', boardRoutes);
