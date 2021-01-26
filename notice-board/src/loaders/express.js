@@ -12,6 +12,9 @@ const passportConfig = require('../config/passport');
 
 // const oauthRoutes = require('../routers/oauth');
 const userRouter = require('../routers/user');
+const boardRouter = require('../routers/board');
+const postRouter = require('../routers/post');
+const commentRouter = require('../routers/comment');
 
 module.exports = async ({ expressApp: app }) => {
   // init config
@@ -52,7 +55,9 @@ module.exports = async ({ expressApp: app }) => {
   // app.use('/oauth', oauthRoutes);
 
   app.use('/api/user', userRouter);
-  // app.use('/api/board', boardRoutes);
+  app.use('/api/board', boardRouter);
+  app.use('/api/post', postRouter);
+  app.use('/api/comment', commentRouter);
 
   // catch 404(not found) and forward to error handler
   app.use((req, res, next) => {

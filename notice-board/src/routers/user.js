@@ -42,7 +42,7 @@ router.post('/signup', async (req, res) => {
   const user = await userModel.findOne({ email });
 
   if (user) {
-    return res.status(422).json({ message: '이미 등록된 email 입니다.' });
+    return res.status(409).json({ message: '이미 등록된 email 입니다.' });
   }
 
   await new userModel(req.body).save();
