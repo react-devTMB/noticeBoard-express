@@ -1,6 +1,8 @@
 const express = require('express');
 
 const router = express.Router();
+const postApiPrefix = '/post';
+const commentApiPrefix = '/comment';
 
 router.get('/', async (req, res, next) => {
   console.log('get list');

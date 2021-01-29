@@ -8,7 +8,10 @@ module.exports = {
 
   port: process.env.PORT,
 
+  apiPrefix: '/api',
+
   sessionSecret: process.env.SESSION_SECRET,
+  jwtSecret: process.env.JWT_SECRET,
 
   mongoUri: process.env.MONGO_URI,
 

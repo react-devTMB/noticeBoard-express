@@ -2,26 +2,28 @@ const passport = require('passport');
 const { Strategy: JwtStrategy, ExtractJwt } = require('passport-jwt');
 
 const userModel = require('../models/User');
+const config = require('../config');
 
 /**
  * JWT Strategy
  */
 const jwtStrategyOption = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-  secretOrKey: 'Test123', // FIXME
+  secretOrKey: config.jwtSecret,
 };
 const jwtVerify = async (payload, done) => {
   let user;
 
   try {
-    const { email, password } = payload;
+    const { email } = payload;
 
-    user = await userModel.findOne({ where: { email, password } });
+    user = await userModel.findOne({ email });
 
     if (!user) {
-      return done(null, false, { message: '이메일 또는 비밀번호가 틀렸습니다. 확인 후 다시 시도해주세요.' });
+      return done(null, false, { message: '올바르지 않은 인증정보 입니다.' });
     }
   } catch (e) {
+    console.error(e);
     return done(e);
   }
 
@@ -29,5 +31,5 @@ const jwtVerify = async (payload, done) => {
 };
 
 module.exports = () => {
-  passport.use(new JwtStrategy(jwtStrategyOption, jwtVerify));
+  passport.use('jwt', new JwtStrategy(jwtStrategyOption, jwtVerify));
 };
