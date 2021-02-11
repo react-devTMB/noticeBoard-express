@@ -7,13 +7,17 @@ const router = express.Router();
 const postApiPrefix = '/post';
 
 router.get(`${postApiPrefix}/`, async (req, res, next) => {
-  const posts = await postModel.find().where('delete_yn').equals('N');
+  const posts = await postModel.find().where('delete_yn').equals('N').sort('-seq');
   res.status(200).json({ posts });
 });
 
 router.get(`${postApiPrefix}/:seq`, async (req, res, next) => {
   const { seq } = req.params;
-  const post = await postModel.findOne({ seq }).where('delete_yn').equals('N');
+  const post = await postModel
+    .findOne({ seq })
+    .where('delete_yn')
+    .equals('N')
+    .populate({ path: 'comments', match: { delete_yn: 'N' } });
 
   if (!post) {
     return res.status(404).json({ message: '해당 게시물이 존재하지 않습니다.' });

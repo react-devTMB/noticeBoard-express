@@ -5,10 +5,9 @@ const userInfo = require('./_userInfo');
 
 const commentSchema = new Schema(
   {
-    seq: { type: Number, required: true },
     content: { type: String, required: true },
+    delete_yn: { type: String, required: true, default: 'N' },
     ...userInfo,
-    _post: { type: Schema.Types.ObjectId, ref: 'Post', index: true },
   },
   {
     timestamps: {
@@ -17,9 +16,5 @@ const commentSchema = new Schema(
     },
   }
 );
-
-commentSchema.plugin(AutoIncrement, {
-  inc_field: 'seq',
-});
 
 module.exports = mongoose.model('Comment', commentSchema);

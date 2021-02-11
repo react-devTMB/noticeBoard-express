@@ -1,10 +1,10 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const TokenSchema = mongoose.Schema({
-  id: { type: String, required: true },
+const tokenSchema = new Schema({
+  email: { type: String, required: true },
   access_token: { type: String, required: true },
-  refresh_token: { type: String },
+  refresh_token: { type: String, required: true },
 });
 
-const TokenModel = mongoose.model('Token', TokenSchema);
-export default TokenModel;
+module.exports = mongoose.model('Token', tokenSchema);
